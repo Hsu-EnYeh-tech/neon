@@ -450,8 +450,12 @@
     const voiceAudio =
         document.getElementById('audio-voice');
 
-    alertAudio.volume = 0.3;
-    voiceAudio.volume = 1.0;
+// AUDIO VOLUMES
+// Alert quieter so voice is clear
+alertAudio.volume = 0.15;
+
+// Voice louder / priority
+voiceAudio.volume = 1.0;
 
     // ==========================================
     // ENTER KEY SUPPORT
