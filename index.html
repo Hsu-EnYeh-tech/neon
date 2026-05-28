@@ -466,97 +466,104 @@
         });
 
     // ==========================================
-    // LOCKDOWN SYSTEM
-    // ==========================================
+// LOCKDOWN SYSTEM
+// ==========================================
 
-    let lockdownLevel =
-        parseInt(localStorage.getItem('neonLockdownLevel')) || 0;
+let lockdownLevel =
+    parseInt(localStorage.getItem('neonLockdownLevel')) || 0;
 
-    let lockEndTime =
-        parseInt(localStorage.getItem('neonLockEndTime')) || 0;
+let lockEndTime =
+    parseInt(localStorage.getItem('neonLockEndTime')) || 0;
 
-    function playLockdownAudio() {
+let lockdownAudioInterval = null; // Interval to keep audio looping
 
-        try {
-            alertAudio.currentTime = 0;
-            voiceAudio.currentTime = 0;
+function playLockdownAudio() {
+    try {
+        // Stop any previous interval
+        clearInterval(lockdownAudioInterval);
 
-            alertAudio.play();
-            voiceAudio.play();
-        }
-        catch(e) {}
-    }
-
-    function stopLockdownAudio() {
-
-        alertAudio.pause();
-        voiceAudio.pause();
-
+        // Reset audio positions
         alertAudio.currentTime = 0;
         voiceAudio.currentTime = 0;
+
+        // Play both audios
+        alertAudio.play();
+        voiceAudio.play();
+
+        // Ensure both audios loop until lockdown ends
+        lockdownAudioInterval = setInterval(() => {
+            if (Date.now() >= lockEndTime) {
+                stopLockdownAudio();
+                clearInterval(lockdownAudioInterval);
+            } else {
+                // Replay if any ended early
+                if (alertAudio.ended) alertAudio.play();
+                if (voiceAudio.ended) voiceAudio.play();
+            }
+        }, 500);
+
+    } catch (e) {
+        console.log("Error playing lockdown audio:", e);
     }
+}
 
-    function updateTimerDisplay(seconds) {
+function stopLockdownAudio() {
+    clearInterval(lockdownAudioInterval);
+    alertAudio.pause();
+    voiceAudio.pause();
+    alertAudio.currentTime = 0;
+    voiceAudio.currentTime = 0;
+}
 
-        document.getElementById('lockdown-timer')
-            .innerText =
-                `00:${seconds.toString().padStart(2, '0')}`;
-    }
+function updateTimerDisplay(seconds) {
+    document.getElementById('lockdown-timer')
+        .innerText = `00:${seconds.toString().padStart(2, '0')}`;
+}
 
-    function checkLockdown() {
+function checkLockdown() {
+    let now = Date.now();
 
-        let now = Date.now();
+    if (now < lockEndTime) {
+        document.getElementById('lockdown-screen').style.display = 'flex';
 
-        if (now < lockEndTime) {
+        let remaining = Math.ceil((lockEndTime - now) / 1000);
 
-            document.getElementById('lockdown-screen')
-                .style.display = 'flex';
+        updateTimerDisplay(remaining);
 
-            let remaining =
-                Math.ceil((lockEndTime - now) / 1000);
+        if (alertAudio.paused) {
+            playLockdownAudio();
+        }
 
+        let interval = setInterval(() => {
+            remaining--;
             updateTimerDisplay(remaining);
 
-            if (alertAudio.paused) {
-                playLockdownAudio();
+            if (remaining <= 0) {
+                clearInterval(interval);
+                document.getElementById('lockdown-screen').style.display = 'none';
+                stopLockdownAudio();
             }
+        }, 1000);
 
-            let interval = setInterval(() => {
+    } else {
+        stopLockdownAudio();
+    }
+}
 
-                remaining--;
+function triggerLockdown() {
+    let waitTime = timeSequence[lockdownLevel] || 60;
 
-                updateTimerDisplay(remaining);
+    lockEndTime = Date.now() + (waitTime * 1000);
 
-                if (remaining <= 0) {
+    localStorage.setItem('neonLockEndTime', lockEndTime);
 
-                    clearInterval(interval);
-
-                    document.getElementById('lockdown-screen')
-                        .style.display = 'none';
-
-                    stopLockdownAudio();
-                }
-
-            }, 1000);
-
-        } else {
-
-            stopLockdownAudio();
-        }
+    if (lockdownLevel < timeSequence.length - 1) {
+        lockdownLevel++;
+        localStorage.setItem('neonLockdownLevel', lockdownLevel);
     }
 
-    function triggerLockdown() {
-
-        let waitTime =
-            timeSequence[lockdownLevel] || 60;
-
-        lockEndTime =
-            Date.now() + (waitTime * 1000);
-
-        localStorage.setItem(
-            'neonLockEndTime',
-            lockEndTime
-        );
+    checkLockdown();
+}
 
         if (lockdownLevel < timeSequence.length - 1) {
 
