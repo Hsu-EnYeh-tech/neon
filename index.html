@@ -473,50 +473,39 @@ voiceAudio.volume = 1.0;
 // LOCKDOWN SYSTEM
 // ==========================================
 
-let lockdownLevel =
-    parseInt(localStorage.getItem('neonLockdownLevel')) || 0;
-
-let lockEndTime =
-    parseInt(localStorage.getItem('neonLockEndTime')) || 0;
-
-let lockdownAudioInterval = null; // Interval to keep audio looping
+let lockdownLevel = parseInt(localStorage.getItem('neonLockdownLevel')) || 0;
+let lockEndTime = parseInt(localStorage.getItem('neonLockEndTime')) || 0;
 
 function playLockdownAudio() {
     try {
-        // Stop any previous interval
-        clearInterval(lockdownAudioInterval);
-
         // Reset audio positions
         alertAudio.currentTime = 0;
         voiceAudio.currentTime = 0;
 
         // Play both audios
+        alertAudio.loop = true; // alert loops automatically
         alertAudio.play();
         voiceAudio.play();
 
-        // Ensure both audios loop until lockdown ends
-        lockdownAudioInterval = setInterval(() => {
-            if (Date.now() >= lockEndTime) {
-                stopLockdownAudio();
-                clearInterval(lockdownAudioInterval);
-            } else {
-                // Replay if any ended early
-                if (alertAudio.ended) alertAudio.play();
-                if (voiceAudio.ended) voiceAudio.play();
+        // Replay voice until lockdown ends
+        voiceAudio.onended = () => {
+            if (Date.now() < lockEndTime) {
+                voiceAudio.currentTime = 0;
+                voiceAudio.play();
             }
-        }, 500);
-
+        };
     } catch (e) {
         console.log("Error playing lockdown audio:", e);
     }
 }
 
 function stopLockdownAudio() {
-    clearInterval(lockdownAudioInterval);
     alertAudio.pause();
     voiceAudio.pause();
     alertAudio.currentTime = 0;
     voiceAudio.currentTime = 0;
+
+    voiceAudio.onended = null; // clean up
 }
 
 function updateTimerDisplay(seconds) {
@@ -531,7 +520,6 @@ function checkLockdown() {
         document.getElementById('lockdown-screen').style.display = 'flex';
 
         let remaining = Math.ceil((lockEndTime - now) / 1000);
-
         updateTimerDisplay(remaining);
 
         if (alertAudio.paused) {
@@ -548,10 +536,23 @@ function checkLockdown() {
                 stopLockdownAudio();
             }
         }, 1000);
-
     } else {
         stopLockdownAudio();
     }
+}
+
+function triggerLockdown() {
+    let waitTime = timeSequence[lockdownLevel] || 60;
+
+    lockEndTime = Date.now() + waitTime * 1000;
+    localStorage.setItem('neonLockEndTime', lockEndTime);
+
+    if (lockdownLevel < timeSequence.length - 1) {
+        lockdownLevel++;
+        localStorage.setItem('neonLockdownLevel', lockdownLevel);
+    }
+
+    checkLockdown(); // starts UI + audio
 }
 
 function triggerLockdown() {
