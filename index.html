@@ -273,11 +273,18 @@ input[type="text"]{
     </button>
 
     <div class="dropdown-content">
-        <button onclick="setAI('flux')">Flux (Default)</button>
-        <button onclick="setAI('dalle')">ChatGPT (DALL-E 3)</button>
-        <button onclick="setAI('gemini')">Google Gemini</button>
-        <button onclick="setAI('canva')">Canva Design</button>
-    </div>
+    <button onclick="setAI('flux')">Flux Schnell (Default)</button>
+    <button onclick="setAI('flux-realism')">FLUX.1 Kontext</button>
+    <button onclick="setAI('flux-3d')">FLUX.2 Klein 4B</button>
+    
+    <button onclick="setAI('seedream')">Seedream 4.0</button>
+    <button onclick="setAI('seedream-pro')">Seedream 4.5 Pro</button>
+    <button onclick="setAI('seedream-lite')">Seedream 5.0 Lite</button>
+    
+    <button onclick="setAI('nanobanana')">NanoBanana Standard</button>
+    <button onclick="setAI('nanobanana-v2')">NanoBanana V2</button>
+    <button onclick="setAI('nanobanana-pro')">NanoBanana Pro</button>
+</div>
 </div>
 
 <button class="ai-button" onclick="toggleGallery(true)">
