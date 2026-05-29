@@ -1,3 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>neon_ai_v4_Pro</title>
+
+<style>
+:root{
+    --neon-blue:#00d4ff;
+    --neon-purple:#9d00ff;
+    --bg-dark:#050506;
+    --card-bg:#111113;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg-dark);
+    color:white;
+    font-family:'Segoe UI',system-ui;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:10px;
+    margin:0;
+    min-height:100vh;
+}
+
+/* LOCKDOWN SCREEN */
+
+#lockdown-screen{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(255,0,0,0.92);
+    z-index:9999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-align:center;
+}
+
+#lockdown-screen h1{
+    font-size:3rem;
+    margin:0;
+}
+
+#lockdown-screen p{
+    font-size:1.2rem;
+}
+
+#lockdown-timer{
+    margin-top:20px;
+    font-size:4rem;
+    font-family:monospace;
+    background:rgba(0,0,0,0.45);
+    padding:15px 30px;
+    border-radius:20px;
+}
+
+/* HEADER */
+
+header{
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 20px;
+}
+
+.ai-button{
+    background:transparent;
+    color:var(--neon-blue);
+    border:1px solid var(--neon-blue);
+    padding:8px 16px;
+    border-radius:20px;
+    cursor:pointer;
+    text-transform:uppercase;
+    font-weight:bold;
+}
+
+.dropdown-content{
+    display:none;
+    position:absolute;
+    background-color:var(--card-bg);
+    min-width:180px;
+    border:1px solid var(--neon-purple);
+    border-radius:10px;
+    z-index:100;
+    top:100%;
+    left:0;
+}
+
+.dropdown-content button{
+    color:white;
+    padding:12px 16px;
+    display:block;
+    background:transparent;
+    border:none;
+    width:100%;
+    text-align:left;
+    cursor:pointer;
+}
+
+.dropdown-content button:hover{
+    background:#222;
+}
+
+.ai-changer:hover .dropdown-content{
+    display:block;
+}
+
+/* MAIN */
+
+.neon-hub-container{
+    border:2px solid var(--neon-blue);
+    padding:30px;
+    border-radius:20px;
+    max-width:750px;
+    width:95%;
+    text-align:center;
+    background:#080809;
+    box-shadow:0 0 20px rgba(0,212,255,0.2);
+}
+
+.input-group{
+    display:flex;
+    gap:10px;
+    margin:20px 0;
+}
+
+input[type="text"]{
+    flex:1;
+    padding:15px;
+    border-radius:10px;
+    border:1px solid #333;
+    background:#1a1a1c;
+    color:white;
+    font-size:16px;
+}
+
+.gen-btn{
+    padding:0 25px;
+    background:var(--neon-purple);
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.style-selector{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+    margin:15px 0;
+}
+
+.style-btn{
+    background:#1a1a1c;
+    border:1px solid #333;
+    color:#aaa;
+    padding:8px 14px;
+    border-radius:15px;
+    cursor:pointer;
+}
+
+.style-btn.active{
+    border-color:var(--neon-blue);
+    color:var(--neon-blue);
+    background:#2a2a2e;
+}
+
+/* LOADER */
+
+.loader-pulse{
+    width:50px;
+    height:50px;
+    border:5px solid var(--neon-purple);
+    border-top:5px solid var(--neon-blue);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:20px auto;
+}
+
+@keyframes spin{
+    0%{transform:rotate(0deg);}
+    100%{transform:rotate(360deg);}
+}
+
+/* IMAGE */
+
+#current-image{
+    max-width:80%;
+    margin-top:20px;
+    border-radius:15px;
+    border:2px solid var(--neon-purple);
+    box-shadow:0 0 20px rgba(157,0,255,0.4);
+}
+
+/* GALLERY */
+
+#gallery-view{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(5,5,6,0.97);
+    z-index:1000;
+    overflow-y:auto;
+    padding:40px;
+}
+
+.gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:20px;
+    margin-top:20px;
+}
+
+.gallery-item{
+    border:1px solid var(--neon-purple);
+    padding:10px;
+    border-radius:15px;
+    background:#111;
+}
+
+.gallery-item img{
+    width:100%;
+    border-radius:10px;
+}
+
+.gal-controls{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:10px;
+}
+
+.icon-btn{
+    cursor:pointer;
+    background:transparent;
+    border:none;
+    font-size:20px;
+    padding:10px;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<!-- AUDIO -->
+<audio id="audio-alert" src="alert.mp3"></audio>
+<audio id="audio-voice" src="voice.mp3"></audio>
+
+<!-- LOCKDOWN -->
+<div id="lockdown-screen">
+    <h1>⚠ SECURITY ALERT</h1>
+    <p>Inappropriate input detected.</p>
+    <div id="lockdown-timer">00:00</div>
+</div>
+
+<!-- HEADER -->
+<header>
+
+<div class="ai-changer" style="position:relative;">
+    <button class="ai-button" id="active-ai-display">
+        Flux (Default)
+    </button>
+
+    <div class="dropdown-content">
+        <button onclick="setAI('flux')">Flux (Default)</button>
+        <button onclick="setAI('dalle')">ChatGPT (DALL-E 3)</button>
+        <button onclick="setAI('gemini')">Google Gemini</button>
+        <button onclick="setAI('canva')">Canva Design</button>
+    </div>
+</div>
+
+<button class="ai-button" onclick="toggleGallery(true)">
+    Gallery
+</button>
+
+</header>
+
+<!-- MAIN -->
+<div class="neon-hub-container">
+
+<h1>neon_ai_v.4</h1>
+
+<div class="input-group">
+    <input
+        type="text"
+        id="prompt-input"
+        placeholder="Initiate neon command..."
+    >
+
+    <button class="gen-btn" onclick="handleGenerate()">
+        Activate
+    </button>
+</div>
+
+<p id="engine-rec" style="color:var(--neon-blue);">
+    Select a style to see the recommended engine.
+</p>
+
+<div class="style-selector">
+
+<button class="style-btn active"
+onclick="setStyle(this,'','FLUX')">
+Default
+</button>
+
+<button class="style-btn"
+onclick="setStyle(this,'oil painting','ChatGPT')">
+Oil Paint
+</button>
+
+<button class="style-btn"
+onclick="setStyle(this,'photorealistic','FLUX')">
+Realistic
+</button>
+
+<button class="style-btn"
+onclick="setStyle(this,'cyberpunk','FLUX')">
+Futuristic
+</button>
+
+<button class="style-btn"
+onclick="setStyle(this,'anime','ChatGPT')">
+Anime
+</button>
+
+<button class="style-btn"
+onclick="setStyle(this,'comic book','ChatGPT')">
+Comic
+</button>
+
+</div>
+
+<div id="output-area">
+
+<div id="status-msg"
+style="color:var(--neon-blue);margin-top:10px;font-style:italic;">
+</div>
+
+<div id="loader"
+class="loader-pulse"
+style="display:none;">
+</div>
+
+<img id="current-image" style="display:none;">
+
+</div>
+
+</div>
+
+<!-- GALLERY -->
+
+<div id="gallery-view">
+
+<div style="display:flex;justify-content:space-between;">
+
+<button class="ai-button"
+onclick="toggleGallery(false)">
+Close Gallery
+</button>
+
+<button class="ai-button"
+style="color:#ff4d4d;border-color:#ff4d4d;"
+onclick="clearGallery()">
+Clear All
+</button>
+
+</div>
+
+<div class="gallery-grid" id="gallery-container"></div>
+
+</div>
+
 <script>
 
 // ==========================================
@@ -8,277 +391,513 @@ let currentAI = 'flux';
 let activeModifier = '';
 
 let imageHistory =
-    JSON.parse(localStorage.getItem('neon_gallery')) || [];
+JSON.parse(localStorage.getItem('neon_gallery')) || [];
 
 const blockedWords = [
-    'suck','fuck','dick','shit','bastard',
-    'ass','butt','crap','hell','bitch',
-    'motherfucker','retard','penis',
-    'sex','damn','bollock','cunt','cock',
-    'bullshit','douche','twat','prick'
+    'suck',
+    'fuck',
+    'dick',
+    'shit',
+    'bastard',
+    'ass',
+    'butt',
+    'crap',
+    'hell',
+    'bitch',
+    'motherfucker',
+    'retard',
+    'penis',
+    'sex',
+    'chinko',
+    'damn',
+    'bollock',
+    'nigger',
+    'ian',
+    'cunt',
+    'cocksucker',
+    'cock',
+    'bullshit',
+    'douche',
+    'twat',
+    'prick',
+    'scumbag',
+    'wanker',
+    'chloe',
+    'doyun',
+    'ikkyu',
+    'junwoo',
+    'leo',
+    'mei',
+    'minjun',
+    'sean',
+    'claire',
+    'knibloe',
+    'hsu',
+    'steven',
+    'ilija',
+    'yeh',
+    'gok',
+    'gay'
 ];
 
-const timeSequence = [3,5,10,15,20,25,30,35,40,45,50,55,60];
+const timeSequence = [
+3,5,10,15,20,25,30,
+35,40,45,50,55,60
+];
 
-// AUDIO
-const alertAudio = document.getElementById('audio-alert');
-const voiceAudio = document.getElementById('audio-voice');
+// ==========================================
+// AUDIO SYSTEM
+// ==========================================
 
-// Alert quieter, voice louder
-alertAudio.volume = 0.12;
+const alertAudio =
+document.getElementById('audio-alert');
+
+const voiceAudio =
+document.getElementById('audio-voice');
+
+// BASE VOLUMES
+alertAudio.volume = 0.22;
 voiceAudio.volume = 1.0;
+
+// TRUE SOUND QUEUE
+let lockdownActive = false;
+
+// alert loops forever
+alertAudio.loop = true;
+
+// VOICE PRIORITY DUCKING
+voiceAudio.addEventListener('play', () => {
+    alertAudio.volume = 0.05;
+});
+
+voiceAudio.addEventListener('ended', () => {
+    alertAudio.volume = 0.22;
+
+    if(lockdownActive){
+        setTimeout(() => {
+            voiceAudio.currentTime = 0;
+            voiceAudio.play();
+        }, 300);
+    }
+});
+
+// ==========================================
+// ENTER SUPPORT
+// ==========================================
+
+document.getElementById('prompt-input')
+.addEventListener('keypress', e => {
+
+    if(e.key === 'Enter'){
+        handleGenerate();
+    }
+});
 
 // ==========================================
 // LOCKDOWN SYSTEM
 // ==========================================
 
 let lockdownLevel =
-    parseInt(localStorage.getItem('neonLockdownLevel')) || 0;
+parseInt(localStorage.getItem('neonLockdownLevel')) || 0;
 
 let lockEndTime =
-    parseInt(localStorage.getItem('neonLockEndTime')) || 0;
+parseInt(localStorage.getItem('neonLockEndTime')) || 0;
 
-function playLockdownAudio() {
-    try {
-        alertAudio.currentTime = 0;
-        voiceAudio.currentTime = 0;
+let countdownAnimation = null;
 
-        alertAudio.loop = true;
-        alertAudio.play();
+function playLockdownAudio(){
 
+    lockdownActive = true;
+
+    alertAudio.currentTime = 0;
+    voiceAudio.currentTime = 0;
+
+    alertAudio.play();
+
+    // voice starts slightly after alert
+    setTimeout(() => {
         voiceAudio.play();
-
-        voiceAudio.onended = () => {
-            if (Date.now() < lockEndTime) {
-                voiceAudio.currentTime = 0;
-                voiceAudio.play();
-            }
-        };
-
-    } catch (e) {
-        console.log(e);
-    }
+    }, 250);
 }
 
-function stopLockdownAudio() {
+function stopLockdownAudio(){
+
+    lockdownActive = false;
+
     alertAudio.pause();
     voiceAudio.pause();
 
     alertAudio.currentTime = 0;
     voiceAudio.currentTime = 0;
-
-    voiceAudio.onended = null;
 }
 
-function updateTimerDisplay(seconds) {
-    document.getElementById('lockdown-timer')
-        .innerText = `00:${seconds.toString().padStart(2,'0')}`;
+function updateTimerSmooth(){
+
+    cancelAnimationFrame(countdownAnimation);
+
+    function update(){
+
+        let remaining =
+        Math.max(0, lockEndTime - Date.now());
+
+        let seconds =
+        Math.ceil(remaining / 1000);
+
+        document.getElementById('lockdown-timer')
+        .innerText =
+        `00:${String(seconds).padStart(2,'0')}`;
+
+        if(remaining > 0){
+            countdownAnimation =
+            requestAnimationFrame(update);
+        }
+    }
+
+    update();
 }
 
-function checkLockdown() {
+function checkLockdown(){
+
     let now = Date.now();
 
-    if (now < lockEndTime) {
+    if(now < lockEndTime){
 
-        document.getElementById('lockdown-screen').style.display = 'flex';
+        document.getElementById('lockdown-screen')
+        .style.display = 'flex';
 
-        let remaining = Math.ceil((lockEndTime - now) / 1000);
+        updateTimerSmooth();
 
-        updateTimerDisplay(remaining);
-
-        if (alertAudio.paused) playLockdownAudio();
+        if(alertAudio.paused){
+            playLockdownAudio();
+        }
 
         let interval = setInterval(() => {
 
-            remaining--;
-            updateTimerDisplay(remaining);
+            if(Date.now() >= lockEndTime){
 
-            if (remaining <= 0) {
                 clearInterval(interval);
-                document.getElementById('lockdown-screen').style.display = 'none';
+
+                document.getElementById('lockdown-screen')
+                .style.display = 'none';
+
                 stopLockdownAudio();
             }
 
-        }, 1000);
+        }, 250);
 
-    } else {
+    }else{
+
         stopLockdownAudio();
     }
 }
 
-function triggerLockdown() {
+function triggerLockdown(){
 
-    let waitTime = timeSequence[lockdownLevel] || 60;
+    let waitTime =
+    timeSequence[lockdownLevel] || 60;
 
-    lockEndTime = Date.now() + waitTime * 1000;
+    lockEndTime =
+    Date.now() + (waitTime * 1000);
 
-    localStorage.setItem('neonLockEndTime', lockEndTime);
+    localStorage.setItem(
+        'neonLockEndTime',
+        lockEndTime
+    );
 
-    if (lockdownLevel < timeSequence.length - 1) {
+    if(lockdownLevel < timeSequence.length - 1){
+
         lockdownLevel++;
-        localStorage.setItem('neonLockdownLevel', lockdownLevel);
+
+        localStorage.setItem(
+            'neonLockdownLevel',
+            lockdownLevel
+        );
     }
 
     checkLockdown();
 }
 
 // ==========================================
-// STYLE + AI
+// AI / STYLE
 // ==========================================
 
-function setAI(aiId) {
+function setAI(aiId){
 
     currentAI = aiId;
 
     const names = {
-        flux: 'Flux (Default)',
-        dalle: 'ChatGPT (DALL-E 3)',
-        gemini: 'Google Gemini',
-        canva: 'Canva Design'
+        flux:'Flux (Default)',
+        dalle:'ChatGPT (DALL-E 3)',
+        gemini:'Google Gemini',
+        canva:'Canva Design'
     };
 
     document.getElementById('active-ai-display')
-        .innerText = names[aiId];
+    .innerText = names[aiId];
 }
 
-function setStyle(btn, mod, rec) {
+function setStyle(btn, mod, rec){
 
     document.querySelectorAll('.style-btn')
-        .forEach(b => b.classList.remove('active'));
+    .forEach(b => b.classList.remove('active'));
 
     btn.classList.add('active');
 
     activeModifier = mod;
 
     document.getElementById('engine-rec')
-        .innerText = `Recommended Engine: ${rec}`;
+    .innerText =
+    `Recommended Engine: ${rec}`;
 }
 
 // ==========================================
-// GENERATION
+// REAL STREAMING STATUS
 // ==========================================
 
-function getProStatus(prompt) {
+function getProStatus(prompt){
 
-    let p = prompt.toLowerCase();
-
-    let messages = [
+    return [
         "Initializing neural bridge...",
-        "Analyzing semantic structure..."
+        "Analyzing prompt structure...",
+        "Building diffusion layers...",
+        "Injecting style modifiers...",
+        "Rendering image tensors...",
+        "Finalizing cinematic output..."
     ];
-
-    messages.push("Finalizing render...");
-    return messages;
 }
 
-async function handleGenerate() {
+async function typeStatus(text){
 
-    const input = document.getElementById('prompt-input');
-    const prompt = input.value.trim();
+    const status =
+    document.getElementById('status-msg');
 
-    if (!prompt) return;
+    status.innerText = '';
 
-    if (blockedWords.some(w => new RegExp(`\\b${w}\\b`, 'i').test(prompt))) {
-        input.value = '';
-        triggerLockdown();
-        return;
+    for(let i=0;i<text.length;i++){
+
+        status.innerText += text[i];
+
+        await new Promise(r =>
+            setTimeout(r, 20)
+        );
     }
-
-    const img = document.getElementById('current-image');
-    const statusMsg = document.getElementById('status-msg');
-
-    document.getElementById('loader').style.display = 'block';
-    img.style.display = 'none';
-
-    const stages = getProStatus(prompt);
-
-    let i = 0;
-    statusMsg.innerText = stages[i];
-
-    let interval = setInterval(() => {
-        i = (i + 1) % stages.length;
-        statusMsg.innerText = stages[i];
-    }, 1000);
-
-    const modelParam =
-        currentAI === 'dalle' ? 'dall-e-3' :
-        currentAI === 'gemini' ? 'gemini' : 'flux';
-
-    const imageUrl =
-        `https://image.pollinations.ai/prompt/${
-            encodeURIComponent(prompt + ', ' + activeModifier)
-        }?model=${modelParam}&seed=${Date.now()}`;
-
-    img.src = imageUrl;
-
-    img.onload = () => {
-        clearInterval(interval);
-        document.getElementById('loader').style.display = 'none';
-        img.style.display = 'block';
-        statusMsg.innerText = "Done!";
-    };
-
-    img.onerror = () => {
-        clearInterval(interval);
-        document.getElementById('loader').style.display = 'none';
-        statusMsg.innerText = "Failed.";
-    };
 }
 
 // ==========================================
 // GALLERY
 // ==========================================
 
-function saveGallery() {
-    localStorage.setItem('neon_gallery', JSON.stringify(imageHistory));
+function saveGallery(){
+
+    localStorage.setItem(
+        'neon_gallery',
+        JSON.stringify(imageHistory)
+    );
 }
 
-function addToGallery(url) {
-    imageHistory.push(url);
-    saveGallery();
-}
+function renderGallery(){
 
-function renderGallery() {
-    const container = document.getElementById('gallery-container');
+    const container =
+    document.getElementById('gallery-container');
+
     container.innerHTML = '';
 
-    imageHistory.forEach((url, i) => {
+    imageHistory.forEach((url,index)=>{
 
-        const div = document.createElement('div');
+        const div =
+        document.createElement('div');
+
         div.className = 'gallery-item';
 
         div.innerHTML = `
-            <img src="${url}">
-            <div class="gal-controls">
-                <button onclick="downloadImg('${url}')">⬇️</button>
-                <button onclick="deleteImg(${i})">🗑️</button>
-            </div>
+        <img src="${url}" alt="Generated Art">
+
+        <div class="gal-controls">
+
+        <button class="icon-btn"
+        onclick="downloadImg('${url}')">
+        ⬇️
+        </button>
+
+        <button class="icon-btn"
+        onclick="deleteImg(${index})">
+        🗑️
+        </button>
+
+        </div>
         `;
 
         container.appendChild(div);
     });
 }
 
-function deleteImg(i) {
-    imageHistory.splice(i,1);
+function addToGallery(url){
+
+    imageHistory.push(url);
+
     saveGallery();
+
     renderGallery();
 }
 
-function downloadImg(url) {
-    const a = document.createElement('a');
+function deleteImg(index){
+
+    imageHistory.splice(index,1);
+
+    saveGallery();
+
+    renderGallery();
+}
+
+function clearGallery(){
+
+    if(confirm("Delete all saved images?")){
+
+        imageHistory = [];
+
+        localStorage.removeItem('neon_gallery');
+
+        renderGallery();
+    }
+}
+
+function downloadImg(url){
+
+    const a =
+    document.createElement('a');
+
     a.href = url;
-    a.download = 'neon.jpg';
+    a.download = 'neon_art.jpg';
+
+    document.body.appendChild(a);
+
     a.click();
+
+    document.body.removeChild(a);
 }
 
-function toggleGallery(show) {
-    document.getElementById('gallery-view').style.display =
-        show ? 'block' : 'none';
+function toggleGallery(show){
+
+    document.getElementById('gallery-view')
+    .style.display =
+    show ? 'block' : 'none';
 }
 
+// ==========================================
+// IMAGE GENERATION
+// ==========================================
+
+async function handleGenerate(){
+
+    const promptInput =
+    document.getElementById('prompt-input');
+
+    const prompt =
+    promptInput.value.trim();
+
+    if(!prompt) return;
+
+    // BLOCK WORDS
+
+    if(
+        blockedWords.some(word =>
+        new RegExp(`\\b${word}\\b`, 'i')
+        .test(prompt))
+    ){
+
+        promptInput.value = '';
+
+        triggerLockdown();
+
+        return;
+    }
+
+    const img =
+    document.getElementById('current-image');
+
+    const loader =
+    document.getElementById('loader');
+
+    loader.style.display = 'block';
+
+    img.style.display = 'none';
+
+    const stages =
+    getProStatus(prompt);
+
+    let stageIndex = 0;
+
+    await typeStatus(stages[0]);
+
+    const statusInterval =
+    setInterval(async () => {
+
+        stageIndex++;
+
+        if(stageIndex < stages.length){
+
+            await typeStatus(
+                stages[stageIndex]
+            );
+        }
+
+    }, 1700);
+
+    const modelParam =
+    currentAI === 'dalle'
+    ? 'dall-e-3'
+    : currentAI === 'gemini'
+    ? 'gemini'
+    : 'flux';
+
+    const imageUrl =
+    `https://image.pollinations.ai/prompt/${
+    encodeURIComponent(
+        prompt + ', ' + activeModifier
+    )}?model=${modelParam}&seed=${Date.now()}`;
+
+    img.src = imageUrl;
+
+    img.onload = () => {
+
+        clearInterval(statusInterval);
+
+        loader.style.display = 'none';
+
+        img.style.display = 'block';
+
+        typeStatus(
+            "Generation complete."
+        );
+
+        addToGallery(imageUrl);
+
+        setTimeout(() => {
+            document.getElementById('status-msg')
+            .innerText = '';
+        }, 3000);
+    };
+
+    img.onerror = () => {
+
+        clearInterval(statusInterval);
+
+        loader.style.display = 'none';
+
+        typeStatus(
+            "Image generation failed."
+        );
+    };
+}
+
+// ==========================================
 // STARTUP
+// ==========================================
+
 checkLockdown();
 renderGallery();
 
 </script>
+
+</body>
+</html>
